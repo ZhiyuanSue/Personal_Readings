@@ -160,6 +160,82 @@ flags，这部分以O开头的flags，并不定义在fs.h，相反，找了一�
 
 
 
+和上面的file.fs一样，同样搞了一个Tables来管理super_operations
+
+```
+struct Table<T: Type + ?Sized>(T);
+impl<T:Type + ?Sized> Tables<T>{
+    const CONTEXT: bindings::fs_context_operations = bindings::fs_constext_operations...
+    unsafe extern "C" fn
+    ......
+    const SUPER_BLOCK: bindings::super_operations = bindings::super_operations...
+}
+```
+
+这里面同样使用前面file.rs的方法定义了两个operations。
+
+随后定义了一堆flags
+
+另一部分则是在于file system的注册，实现了一个registration类，用于向系统注册文件系统。包括new，register，unregister_keys以及调用C的init_fs_context_callback和kill_sb_callback以及drop等方法。
+
+还有就是对于超级块的管理，超级块是一个文件系统必须要的部分，分别实现了以下数据结构
+
+```
+pub struct SuperParams{
+    pub magic: u32,
+    pub blocksize_bits: u8,
+    pub maxbytes: i64,
+    pub tim_gran: u32,
+}
+pub struct NewSuperBlock<'a,T:Type+?Sized, S=NeedsInit>{
+    sb: *mut bindings::super_block,
+    _p:PhantomData<(&'a T,S)>,
+}
+pub struct SuperBlock<T:Type+?Sized>(
+    pub(crate) UnsafeCell<bindings::super_block>,
+    PhantomData<T>,
+)
+```
+
+真正的superblock是后面那个SuperBlock，而之前的NewSuperBlock仅仅是在后面实现了一个init_root方法，返回了一个SuperBlock的结果。这就是一种面向对象编程的思想，初始化某个对象的方法，也要作为一个对象来管理？？？
+
+这个newsuperblock也很有意思，在他后面的S属性中，一开始是NeedsInit，经过init之后，该状态转为了NeedsRoot。于是可以调用状态为NeedsRoot的init_root
+
+```
+pub struct NewSuperBlock<'a,T:Type+?Sized, S=NeedsInit>{    //S是NeedsInit
+    sb: *mut bindings::super_block,
+    _p:PhantomData<(&'a T,S)>,
+}    //一开始状态，需要调用init
+impl<'a,T:Type+?Sized> NewSuperBlock<'a,T,NeedsInit>{
+    unsafe fn new(sb:*mut bindings::super_block) -> Self{    //新建一个
+        Self{
+            sb,
+            _p:PhantomData
+        }
+    }
+    pub fn init(self,data:T::Data,params:&SuperParams)
+        ->Result<NewSuperBlock<'a,T,NeedsRoot>>        //注意这里面的结果，S转成了NeedsRoot
+}
+impl<'a,T:Type+?Sized> NewSuperBlock<'a,T,NeedsRoot>
+{
+    pub fn init_root(self) -> Result<&'a SuperBlock<T>>    //再调用这个的init_root，于是就完成了
+}
+```
+
+显然他的方法是先new一个，然后状态转为needsinit，再调用init，转为needsroot，最后调用init_root才完成。
+
+
+
+除此之外，还分别实现了inode和dentry的部分——但是仅仅调用了bindings::inode和bindings::dentry
+
+还有就是Filename。该部分同样仅仅只有一个init。
+
+
+
+最后，定义了一个module_fs的宏，来实现fs模块。
+
+该宏调用了module宏，最后实现了fs模块。（这个模块是指的Linux内的模块，而不是rust的模块）
+
 
 
 # kernel/fs/
@@ -185,7 +261,7 @@ fs_param_type fs_param_is_bool,fs_param_is_u32,fs_param_is_s32,fs_param_is_u64,
 
 而在param.rs里面，他做了对应的事情，但是也没完全实现（可能是由于语言的问题）
 
-定义了一个宏：define_param_type！
+定义了一个宏：define_param_type！，该宏中，定义了一个mod，以及spec和handler两个方法。
 
 然后使用该宏定义了一堆mod，bindings绑定了这些函数中的若干个（并非全部）
 
@@ -207,7 +283,19 @@ const ZERO_SPCE:bindings::fs_parameter_spec = bindings::fs_parameter_spec{
 
 有所区别的是对于这个结构体的管理上面
 
+在rust这里面使用了SpecArray和SpecTable等等一串结构体来对fs_parameter_spec来进行封装管理。
 
+最后定义了一个宏define_fs_params
+
+还记得之前说开头定义的define_param_type这个宏，定义了一堆mod嘛
+
+在define_fs_params这个宏里面，根据传入的参数，对各种各样的类型的mod都调用了一遍对应mod中的spec和handler。
+
+
+
+相关操作可以参考一个例子，在samples/rust/rust_fs.rs中有实现一个RustFs最后调用了这个define_fs_params宏，去定义fs的参数。
+
+而最后这个RustFs，又作为一个参数传递给fs.rs中的module_fs宏，定义一个fs
 
 # 与linux内核对比
 
@@ -230,3 +318,7 @@ const ZERO_SPCE:bindings::fs_parameter_spec = bindings::fs_parameter_spec{
 对于fs.h
 
 其实在file.rs里面实现了operations，但是具体绑定的实际操作函数，仍然有大量的函数直接写了None，也就是没有实现。
+
+对比fs.h，主要的file_operations和superblock的operations，都实现了，但是没有实现inode的operations。
+
+总体而言，啊，按照他给出的操作接口操作就完事了。有啥自己想要弄的操作，实现一下就好了。
