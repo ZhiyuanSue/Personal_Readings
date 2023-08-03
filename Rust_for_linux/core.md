@@ -316,6 +316,20 @@ pub struct NonNull<T: ?Sized> {
 }
 ```
 
+Unique< T >
+
+```
+#[repr(transparent)]
+pub struct Unique<T: ?Sized> {
+    pointer: *const T,
+    _marker: PhantomData<T>,
+}
+```
+
+和上面一对比就知道，多了个_marker: PhantomData< T >，作用是告诉编译器他具有所有权，从而能够实现Send，Sync等等需要所有权的特性，Unique指针被封装前，必须保证他不是NonNull< T >
+
+同样的道理，为了保证具有堆空间申请内存的所有权，必须要用Unique < T >
+
 
 
 Mem模块函数
@@ -339,5 +353,3 @@ pub struct Layout {
 ```
 
 也就是这个对象的大小和对齐情况。
-
-
