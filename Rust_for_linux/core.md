@@ -4,11 +4,9 @@
 
 因此开始阅读对此的一个中文注解：https://github.com/Warrenren/inside-rust-std-library
 
+仅做部分摘录和阅读，因为，对于std标准库部分的实现和OS有关
 
-
-## 概述
-
-内置的intrinsics函数对硬件的封装
+## 
 
 traits
 
@@ -159,7 +157,7 @@ Rust的安全特性是建立在一大堆unsafe上面的
 
 
 
-## 内存
+# 
 
 一个变量的内存参数包括
 
