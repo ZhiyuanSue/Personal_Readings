@@ -8,6 +8,6 @@
 
 - the performance is in the same league    league在这里是范畴的意思
 
-- 
+- pseudo code 伪代码
 
 - ......
