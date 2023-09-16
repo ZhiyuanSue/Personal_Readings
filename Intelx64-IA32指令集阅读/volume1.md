@@ -362,8 +362,18 @@ CS段表示的是code，DS，ES，FS和GS是data，SS是stack，可以被显式�
 
 3、EFLAGS
 
-状态flag：bit0-cf，bit2-pf（结果最低位的有效字节包含偶数位1位，则设置，否则清除），bit4-Auxiliary carry flag（BCD码的借位），bit6-ZF，bit7-SF，bit11-OF，只有CF位可以直接改，使用STC，CLC和CMC指令，（CMC指令是取反的意思），
+- 状态flag：bit0-cf，bit2-pf（结果最低位的有效字节包含偶数位1位，则设置，否则清除），bit4-Auxiliary carry flag（BCD码的借位），bit6-ZF，bit7-SF，bit11-OF，只有CF位可以直接改，使用STC，CLC和CMC指令，（CMC指令是取反的意思），使用BT，BTS，BTR和BTC。
+
+- DF状态位
+
+bit10-DF，设置方向，置位之后，传送则自动减一
+
+STD，CLD指令设置并且清理DF位。
+
+- 系统flag和IOPL field
+
+这些不应当被用户程序更改。
+
+bit8-TF（trap flag，允许单步跟踪），bit9-IF（中断允许位），bit 12和13-IOPL，bit14-
 
 4、EIP
-
-
