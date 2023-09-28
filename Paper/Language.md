@@ -10,4 +10,6 @@
 
 - pseudo code 伪代码
 
+- analogously 类似的
+
 - ......
