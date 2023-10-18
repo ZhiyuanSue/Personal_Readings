@@ -154,4 +154,64 @@ ghOSt通过让所有不活跃的代理立即让出CPU来维护系统的稳定性
 
 他自己也说了，跟第一篇论文的Shenango差不太多
 
+但也有一些差别
 
+Shenango只使用排队延迟作为控制信号，Caladan使用多个信号
+
+Caladan的调度核心只负责CPU调度，而Shenango的调度核心将网络处理与CPU调度结合在一起
+
+
+
+用户可以为每个任务分配一定数量的保证核心数，这些核心数在需要时始终可用。用户还可以为任务分配额外的可突发核心数，以利用任何空闲容量。此外，每个任务被指定为LC（latency-critical）或BE（low-priority,best-effort）。BE任务的优先级较低：只有在LC任务不需要时，它们才被分配可突发核心数，它们始终分配零个保证核心数，并根据需要进行限制以管理干扰。
+
+
+
+对于用于控制调度的信号
+
+三个来源：
+
+运行时间提供有关请求处理时间和排队延迟的信息；
+
+DRAM控制器提供有关全局内存带宽使用情况的信息；
+
+KSCHED提供有关每个核心LLC缺失率的信息，并在任务自愿放弃时通知调度器核心
+
+
+
+对于排队时延
+
+它会定期检查每个任务的排队延迟，并尝试向延迟超过可配置的每个任务阈值（THRESH_QD）的任务添加核心。
+
+排队可以发生在每个运行时核心的绿色线程运行队列、网络入口队列、存储完成队列和计时器堆中。每个排队元素都包含其到达时间的时间戳，并且所有队列都放置在共享内存中。QueueingDelay()通过将每个队列中最老元素的延迟相加来计算每个核心的延迟。然后它报告任务核心中观察到的最大延迟。
+
+
+
+对于DRAM控制器
+
+定期轮询DRAM控制器的全局内存带宽使用计数器，计算自上次轮询间隔以来的访问速率，并在其超过饱和阈值时触发。
+
+从每个调度核的性能监控单元（PMU）高效采样LLC misses来将内存带宽使用归因于特定任务
+
+
+
+超线程控制器
+
+检测到超线程干扰后，禁止使用兄弟超线程直到当前请求完成
+
+
+
+# 5、Preemptive Scheduling for μsecond-scale Tail Latency
+
+先批判了一番几个调度
+
+分布式排队和先进先出（FCFS）调度，称为d-FCFS
+
+ZygOS用c-FCFS
+
+
+
+# 6、User-De￿fined Scheduling Across the Stack
+
+
+
+# 7、When Idling is Ideal Optimizing Tail-Latency for Heavy-Tailed Datacenter Workloads with Perséphone
