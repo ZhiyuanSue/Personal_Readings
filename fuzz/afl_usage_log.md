@@ -109,3 +109,25 @@ Harness
 额，大概是说，因为他会改动全局的变量什么的，所以会上一个harness（我查出来是什么马具，之类的含义，估计是什么限制吧）
 
 just a bit of code we write to call in to the target for fuzzing
+可以参考AFL++关于LLVM的persistent模式的文档
+
+可以在forkServerExecutor中增加一个
+is_persistent为true
+
+（可能需要修改目标的C代码，因此这事情后面还需要看文档增加内容）
+
+最关键是需要清理干净。
+
+但是有时候吧，不需要清理干净，反而需要使用harness去探索更深的路径。
+他举得这个例子是uid_to_name这个，反正是说，需要下一次迭代，这个string仍然是可用的。
+
+## In-Process Fuzzer
+除了AFL++的编译器和fork server之外，单独一个进程中能够运行多个测试样例还有别的方法。
+
+使用InProcessExecutor
+
+除此之外，LIBAFL可以支持nostd，不依赖于一个os或者标准库。所以可以整个注入目标的环境
+
+只要到达我们的fuzz代码，我们就可以fuzz
+
+
