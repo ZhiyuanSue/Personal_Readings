@@ -121,13 +121,33 @@ emmm。。。
 在arm和rv的部分里面，有这两个函数，跟x86的实现有一些，额好像是巨大的差别。
 
 # 关于内存管理
-目前我还是属于一知半解的，看文档也一知半解。
-在x86 64上面是map kernel window，
+我今天看了一圈文档
 
-map kernel window
+
 
 
 
 # 关于capability space
+我试图直接看代码，但是挺晕的，所以我找了一份文档
+https://docs.sel4.systems/Tutorials/capabilities.html
+
+There are three kinds of capabilities in seL4:
+- capabilities that control access to kernel objects such as thread control blocks,
+- capabilities that control access to abstract resources such as IRQControl, and
+- untyped capabilities, that are responsible for memory ranges and allocation from those (see also the Untyped tutorial).
+
+A CNode (capability-node) is an object full of capabilities: you can think of a CNode as an array of capabilities
+然后代码不要看sel4那个，要看sel4test里面有足够的代码。
+我也看了rel4test的仓库，他貌似是从sel4的这个延伸出来的然后新建了rel4的代码，但是测试相关用的还是sel4的代码
+
+对于cap的定义
+struct cap里面包含两个u64int_t,
+一个capability space可能包含多个cnode
+
+还是来看代码吧，他给的例子是一个函数seL4_CNode_Copy，这个函数可以去找，找到他的原型
+seL4_CNode是一个seL4_CPtr类型，而seL4_CPtr是一个seL4_Word类型。
+
+
 
 # 关于IPC
+
